@@ -1,22 +1,14 @@
-import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import io from 'socket.io-client';
 
 function App() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [socket, setSocket] = useState(null); // Save socket instance in state
-
-  useEffect(() => {
-    // Cleanup socket connection when the component unmounts
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, [socket]);
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -31,19 +23,14 @@ function App() {
           const token = response.data.token;
           localStorage.setItem('token', token);
 
-          // Initialize socket connection only after successful login
-          const newSocket = io('http://localhost:5000'); // Flask server URL
+          // Establish socket connection
+          const socket = io('http://localhost:5000');
 
-          // Save the socket instance in state
-          setSocket(newSocket);
+          // After successful connection, emit user_connected with the name
+          socket.emit('user_connected', { name });
 
-          newSocket.on('connect', () => {
-            console.log('Connected to the server');
-          });
-
-          newSocket.on('disconnect', () => {
-            console.log('Disconnected from the server');
-          });
+          // Redirect to home page after successful login
+          navigate('/home');
         } else {
           setMessage(response.data.message);
         }
